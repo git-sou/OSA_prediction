@@ -1,0 +1,224 @@
+---
+title: "OSA Case - MLLB Report"
+author: "Samy OUSSAIDENE"
+date: "October, 29th"
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+# EDA
+
+```{r, echo=FALSE}
+# Clear the working space
+rm(list=ls())
+
+Input_file <- "OSA_DB_UPM.xlsx"
+
+Data_Directory <- "C:/Users/Samy/Desktop/OSA Case/"
+```
+
+```{r}
+library(readxl)
+
+df_OSA <- read_excel(paste(Data_Directory, Input_file, sep = ""))
+
+df_OSA = as.data.frame(df_OSA)
+
+df_OSA$Weight = as.numeric(df_OSA$Weight)  # need to convert character to numeric
+
+library(dplyr)
+df_OSA=filter(df_OSA,Weight>=0) ## remove NA
+
+df_OSA$Gender=factor(df_OSA$Gender)
+
+## Define of BMI
+df_OSA$BMI <-
+  with(df_OSA, Weight / (Height/100.0)^2)
+
+## Add categorical feature OSA
+#     Healthy (IAH <= 10)
+#     Mild (10<IAH<30)
+#     Severe (IAH >=30)
+
+# We will use dplyr library (mutate operator)
+
+df_OSA <- df_OSA %>%
+          mutate(OSA = ifelse(IAH <= 10, "Healthy",
+          ifelse(IAH>=30, "Severe", "Mild")))
+
+```
+
+# Categorical Features 
+
+```{r}
+barplot(table(df_OSA$Gender), col=c("steelblue4","steelblue1"))
+```
+
+```{r}
+barplot(table(df_OSA$OSA), col=c("steelblue4","steelblue3","steelblue1"))
+```
+
+#Numerical Features
+
+```{r}
+## Describe the Database
+
+df_OSA_bis=subset(df_OSA, select = -c(Gender,Patient,OSA))
+
+summary(df_OSA_bis)
+
+library(visdat)
+vis_dat(df_OSA_bis)
+```
+
+```{r}
+attach(df_OSA_bis)
+layout(matrix(1:6,2,3))
+hist(IAH,col="steelblue3")
+hist(Weight,col="steelblue3")
+hist(Height,col="steelblue3")
+hist(BMI,col="steelblue3")
+hist(Cervical,col="steelblue3")
+hist(Age,col="steelblue3")
+```
+
+```{r}
+attach(df_OSA_bis)
+pairs(~ IAH + BMI + Weight + Height + Cervical + Age, col="steelblue3",
+      main="Relations between variables")
+```
+
+```{r}
+## PLOT Correlation Matrix
+
+# FIRST
+# install corrplot and then load it
+library(corrplot)
+
+#I noted that one patient didn't fill his Weight. So, it failed during the computation of correlation.
+#So, I remove the corresponding row. But I could fill empty information by the mean of whole data. 
+#library(dplyr)
+#df_OSA_bis=filter(df_OSA_bis,Weight>=0) 
+
+M <- cor(df_OSA_bis)  
+corrplot(M, method="number")
+corrplot(M, method="circle")
+```
+
+# Combine type of features
+
+```{r}
+attach(df_OSA)
+
+df_OSA_male=subset(df_OSA, Gender=="hombre")
+df_OSA_female=subset(df_OSA, Gender=="mujer")
+
+df_OSA$OSA=factor(df_OSA$OSA)
+df_OSA_healthy=subset(df_OSA, OSA=="Healthy")
+df_OSA_mild=subset(df_OSA, OSA=="Mild")
+df_OSA_severe=subset(df_OSA, OSA=="Severe")
+```
+
+```{r}
+boxplot(df_OSA_male$IAH,df_OSA_female$IAH,col=c("steelblue4","steelblue1"))
+title(main = "IAH depending on Gender")
+legend("topright", c("Male", "Female"), fill=c("steelblue4","steelblue1"))
+```
+
+```{r}
+boxplot(df_OSA_healthy$IAH,df_OSA_mild$IAH,df_OSA_severe$IAH,col=c("steelblue4","steelblue3","steelblue1"))
+title(main = "IAH depending on OSA")
+legend("topright", c("Healthy","Mild","Severe"), fill=c("steelblue4","steelblue3","steelblue1"))
+```
+
+```{r}
+my_cols <- c("steelblue4", "steelblue1") 
+pairs(~ IAH + BMI + Height + Weight + Cervical + Age, 
+      col = my_cols[Gender],main="Relations between variables depending on Gender")
+```
+
+```{r}
+my_cols <- c("steelblue4", "steelblue3","steelblue1") 
+pairs(~ IAH + BMI + Height + Weight + Cervical + Age, 
+      col = my_cols[df_OSA$OSA])
+```
+
+# Data Preparation
+
+# Machine Learning Modelling
+
+Linear Regression
+```{r}
+# Study the use of Simple and Multiple LR models
+attach(df_OSA_bis)
+lm.fit=lm(IAH~Weight+Height+Cervical+Age)
+
+summary(lm.fit)
+plot(lm.fit, col="steelblue2")
+hist(lm.fit$residuals,col="steelblue2")
+```
+
+Study independently male and female populations
+```{r}
+### Male population
+df_OSA_male=subset(df_OSA_bis, Gender==1)
+
+# Another way
+# df_OSA_male = df_OSA_C[df_OSA_C$Gender == 1, ]
+
+names(df_OSA_male)
+attach(df_OSA_male)
+
+lm_male.fit=lm(IAH~Height+Cervical+Age+Weight)
+
+summary(lm_male.fit)
+hist(lm_male.fit$residuals,col="steelblue2")
+```
+
+```{r}
+### Female population
+
+df_OSA_female=subset(df_OSA_bis, Gender==2)
+names(df_OSA_female)
+attach(df_OSA_female)
+
+lm_female.fit=lm(IAH~Height+Cervical+Age+Weight)
+
+summary(lm_female.fit)
+hist(lm_female.fit$residuals,col="steelblue2")
+```
+
+```{r}
+attach(df_OSA_bis)
+
+lm.fit=lm(IAH~BMI+Cervical+Age)
+
+summary(lm.fit)
+hist(lm.fit$residuals,col="steelblue2")
+```
+
+
+########################################
+########################################
+####   NEXT STEPS:
+####
+####  You can try:
+####        - Regularization
+####        - Feature selection
+####        - other Regression models
+####
+####  BUT you can wait to see Classification Script
+####           and use regression with some libraries as CARET
+#### Comparison of Linear Regression with K Nearest Neighbors
+  
+
+
+
