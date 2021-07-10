@@ -8,7 +8,7 @@
 rm(list=ls())
 
 Input_file <- "Raw_data.xlsx"
-Output_file <- "OSA_DB_UPM2.xlsx"
+Output_file <- "OSA_DB_UPM_2.xlsx"
 
 Data_Directory <- "C:/Users/Samy/Desktop/OSA Case/"
 
