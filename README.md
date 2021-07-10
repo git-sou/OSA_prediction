@@ -17,9 +17,13 @@ The teacher let us the choice between R and Python. As I expected to work on oth
 ## Results
 I runned different models in different notebooks. Each time I used the same train and test set and I tried to tuned the hyperparameters for each model. At the end of each notebook, I saved the results and finally gathered and displayed them.
 ### Regression result:
-For regression models, I used RMSE and MAE. We want to minimize them, so the best model is at the bottom left corner. 
+For regression models, I used RMSE and MAE. We want to minimize them, so the best model is at the bottom left corner.
+<p align="center">
 <img width="462" alt="image" src="https://user-images.githubusercontent.com/83417933/125166354-991e1c80-e19b-11eb-8f19-a797cc4bbcf7.png">
+</p>
 
 ### Classification result:
 For classification models, I used the ROC Area Under the Curve and the accuracy. We want to maximize them, so the best model is at the top right corner.
+<p align="center">
 <img width="450" alt="image" src="https://user-images.githubusercontent.com/83417933/125166364-a4714800-e19b-11eb-8f41-a9c145b23b63.png">
+</p>
