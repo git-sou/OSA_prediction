@@ -9,7 +9,7 @@ According to HealthLine and medically reviewed by the University of Illinois-Chi
 ## Data
 
 The dataset was provided by the teacher. It was an excel file with 28 columns, so 28 categories and 873 rows. The features from the dataset are divided into categorical and numerical:
-1. Patient: An ID for patient identification.
+- Patient: An ID for patient identification.
 2. Comentarios: Comments related to patients. It is mostly useless information and hence it was removed.
 3. Audio tumbado: It just records whether there is an audio of the patient or not. It was removed.
 4. Fotos: Useless information, it was removed.
