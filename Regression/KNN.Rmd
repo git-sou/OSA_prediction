@@ -1,0 +1,89 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+rm(list=ls())
+list=ls()
+```
+
+```{r, echo=FALSE}
+library(dplyr)
+library(readxl)
+library(caret)
+```
+
+DATA IMPORTATION:
+```{r}
+Data_Directory <- "~/Desktop/OSA Case/Regression Notebook/"
+
+setwd(Data_Directory)
+
+train_file <- "train.xlsx"
+test_file <- "test.xlsx"
+
+train <- read_excel(paste(Data_Directory, train_file, sep = ""))
+test <- read_excel(paste(Data_Directory, test_file, sep = ""))
+```
+
+LEARNING PROCESS:
+```{r}
+set.seed(123)
+train_Control <- trainControl(method="cv", number=10)
+
+k <- expand.grid(k = 2:40) 
+
+knn <- train(IAH ~ Age+Cervical+BMI, data = train,
+               method="knn",trControl=train_Control, 
+               preProcess="range", tuneGrid = k, metrics ="RMSE")
+
+print(knn)
+
+print(knn$finalModel)
+```
+
+
+```{r}
+plot(knn, lwd=2, xlab = "k-value")
+```
+
+PREDICTION PROCESS:
+```{r}
+pred <- predict(knn, newdata=test)
+```
+
+```{r}
+metrics = postResample(pred, test$IAH)
+metrics
+```
+
+
+```{r}
+plot(abs(test$IAH-pred),xlab="IAH",type='p',col='blue')
+```
+
+EXPORT OF DATA:
+- import the excel file
+```{r, setup, include=FALSE}
+Data_Directory <- "~/Desktop/OSA Case/Results/"
+
+knitr::opts_knit$set(root.dir = Data_Directory)
+
+file <- "Regression Results.xlsx"
+
+results <- read_excel(paste(Data_Directory, file, sep = ""))
+```
+
+- write into it:
+```{r}
+results$kNN = metrics
+```
+
+- export the data 
+```{r}
+write_xlsx(results, paste(Data_Directory, file, sep = ""))
+```
+
+

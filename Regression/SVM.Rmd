@@ -1,0 +1,171 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+All SVM kernel methods are based on distance so it is required to scale variables prior to running final Support Vector Machine (SVM) model.
+
+```{r}
+rm(list=ls())
+list=ls()
+```
+
+```{r, echo=FALSE}
+library(dplyr)
+library(readxl)
+library(caret)
+```
+
+DATA IMPORTATION:
+```{r}
+Data_Directory <- "~/Desktop/OSA Case/Regression Notebook/"
+
+setwd(Data_Directory)
+
+train_file <- "train.xlsx"
+test_file <- "test.xlsx"
+
+train <- read_excel(paste(Data_Directory, train_file, sep = ""))
+test <- read_excel(paste(Data_Directory, test_file, sep = ""))
+```
+
+LEARNING PROCESS:
+I tried different c to find the best. each time, I reduce the interval. At the beginning, 1:5.Then 2:4:0.1. And finally,  
+```{r}
+set.seed(123)
+train_Control <- trainControl(method="cv", number=10)
+c <- expand.grid(C = seq(2,4,0.1)) 
+
+SVM_linear <- train(IAH ~ Age+Cervical+BMI, data =train,
+               method="svmLinear",trControl=train_Control, 
+               preProcess= c("center","scale"), tuneGrid = c)
+
+print(SVM_linear)
+summary(SVM_linear)
+
+print(SVM_linear$finalModel)
+```
+
+tuneLength to estimate a first tuning of hyperparameters: tuneLength = 3.
+
+```{r}
+set.seed(123)
+train_Control <- trainControl(method="cv", number=10)
+
+tune <- expand.grid(C = seq(0.1,0.3,0.05), scale = seq(0.5,1.5,0.25) , degree = 2) 
+
+SVM_poly <- train(IAH ~ Age+Cervical+BMI, data = train,
+               method="svmPoly",trControl=train_Control,
+               preProcess= c("center","scale"), tuneGrid = tune)
+
+print(SVM_poly)
+summary(SVM_poly)
+
+print(SVM_poly$finalModel)
+```
+
+
+```{r}
+set.seed(123)
+tune <- expand.grid(C = seq(0.25,0.75,0.1), sigma = seq(0.25,0.75,0.1)) 
+
+SVM_radial <- train(IAH ~ Age+Cervical+BMI, data =train,
+               method="svmRadial",trControl=train_Control, 
+               preProcess= c("center","scale"), tuneGrid = tune)
+
+print(SVM_radial)
+summary(SVM_radial)
+
+print(SVM_radial$finalModel)
+```
+
+```{r}
+plot(SVM_linear)
+plot(SVM_poly)
+plot(SVM_radial)
+```
+
+PREDICTION PROCESS:
+```{r}
+pred_linear <- predict(SVM_linear,newdata=test)
+
+pred_poly <- predict(SVM_poly,newdata=test)
+
+pred_radial <- predict(SVM_radial,newdata=test)
+```
+
+
+```{r}
+metrics1 = postResample(pred_linear, test$IAH)
+
+metrics2 = postResample(pred_poly, test$IAH)
+
+metrics3 = postResample(pred_radial, test$IAH)
+```
+
+
+```{r}
+plot(abs(test$IAH-pred),xlab="IAH",type='p',col='blue')
+```
+
+
+```{r}
+my_data = as.data.frame(cbind(predicted = pred_linear, observed = test$IAH))
+
+# Plot predictions vs test data
+ggplot(my_data,aes(predicted, observed)) + geom_point(color = "darkred", alpha = 0.5) + 
+    geom_smooth(method=lm)+ ggtitle('Linear Regression ') + ggtitle("Linear regression: Prediction vs Test Data") +
+      xlab("Predecited Power Output ") + ylab("Observed Power Output") + 
+        theme(plot.title = element_text(color="darkgreen",size=16,hjust = 0.5),
+         axis.text.y = element_text(size=12), axis.text.x = element_text(size=12,hjust=.5),
+         axis.title.x = element_text(size=14), axis.title.y = element_text(size=14))
+```
+
+```{r}
+my_data = as.data.frame(cbind(predicted = pred_poly, observed = test$IAH))
+
+# Plot predictions vs test data
+ggplot(my_data,aes(predicted, observed)) + geom_point(color = "darkred", alpha = 0.5) + 
+    geom_smooth(method=lm)+ ggtitle('Linear Regression ') + ggtitle("Linear regression: Prediction vs Test Data") +
+      xlab("Predecited Power Output ") + ylab("Observed Power Output") + 
+        theme(plot.title = element_text(color="darkgreen",size=16,hjust = 0.5),
+         axis.text.y = element_text(size=12), axis.text.x = element_text(size=12,hjust=.5),
+         axis.title.x = element_text(size=14), axis.title.y = element_text(size=14))
+```
+
+
+```{r}
+my_data = as.data.frame(cbind(predicted = pred_radial, observed = test$IAH))
+
+# Plot predictions vs test data
+ggplot(my_data,aes(predicted, observed)) + geom_point(color = "darkred", alpha = 0.5) + 
+    geom_smooth(method=lm)+ ggtitle('Linear Regression ') + ggtitle("Linear regression: Prediction vs Test Data") +
+      xlab("Predecited Power Output ") + ylab("Observed Power Output") + 
+        theme(plot.title = element_text(color="darkgreen",size=16,hjust = 0.5),
+         axis.text.y = element_text(size=12), axis.text.x = element_text(size=12,hjust=.5),
+         axis.title.x = element_text(size=14), axis.title.y = element_text(size=14))
+```
+
+
+EXPORT OF DATA:
+- import the excel file
+```{r, setup, include=FALSE}
+Data_Directory <- "~/Desktop/OSA Case/Results/"
+
+knitr::opts_knit$set(root.dir = Data_Directory)
+
+file <- "Regression Results.xlsx"
+
+results <- read_excel(paste(Data_Directory, file, sep = ""))
+```
+
+- write into it and export:
+```{r}
+results$SVM_linear = metrics1
+
+results$SVM_poly = metrics2
+
+results$SVM_radial = metrics3
+
+write_xlsx(results, paste(Data_Directory, file, sep = ""))
+```
