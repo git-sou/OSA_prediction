@@ -1,0 +1,50 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+rm(list=ls())
+list=ls()
+```
+
+```{r, echo=FALSE}
+library(dplyr)
+library(readxl)
+library(writexl)
+library(caret)
+library('randomForest')
+```
+
+DATA IMPORTATION:
+```{r}
+Data_Directory <- "~/Desktop/OSA Case/Features Selection/"
+
+setwd(Data_Directory)
+
+Input_file <- "OSA_DB_UPM2.xlsx"
+
+df_OSA <- read_excel(paste(Data_Directory, Input_file, sep = ""))
+
+df_OSA = as.data.frame(df_OSA)
+```
+
+DATA PREPARATION:
+```{r}
+df_OSA = df_OSA %>% filter(OSA != "Mild")
+#df_OSA = df_OSA %>% filter(Gender!= "mujer")
+df_OSA = subset(df_OSA, select = -c(Patient, IAH))
+df_OSA$Gender = factor(df_OSA$Gender)
+df_OSA$OSA = factor(df_OSA$OSA)
+```
+
+PROCESSING:
+```{r}
+# Using random forest
+rfModel <-randomForest( OSA ~ ., df_OSA)
+
+# Getting the list of important variables
+importance(rfModel)
+```
+

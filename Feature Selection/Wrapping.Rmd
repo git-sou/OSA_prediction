@@ -1,0 +1,50 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+rm(list=ls())
+list=ls()
+```
+
+```{r, echo=FALSE}
+library(dplyr)
+library(readxl)
+library(writexl)
+library(caret)
+```
+
+DATA IMPORTATION:
+```{r}
+Data_Directory <- "~/Desktop/OSA Case/Features Selection/"
+
+setwd(Data_Directory)
+
+Input_file <- "OSA_DB_UPM2.xlsx"
+
+df_OSA <- read_excel(paste(Data_Directory, Input_file, sep = ""))
+
+df_OSA = as.data.frame(df_OSA)
+```
+
+DATA SELECTION:
+```{r}
+# Study gender separatly
+# But the number of female is too low, so I studied only male 
+df_OSA_male=subset(df_OSA, Gender=="hombre")
+df_OSA_male= subset(df_OSA_male, select = -c(Patient,OSA,Gender))
+```
+
+```{r}
+model <-  lm(IAH ~ Age+Cervical+BMI, data = df_OSA_male)
+```
+
+
+```{r}
+stepAIC(model, direction = "both")
+stepAIC(model, direction = "backward")
+stepAIC(model, direction = "forward")
+```
+

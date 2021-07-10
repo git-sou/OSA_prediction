@@ -1,0 +1,37 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+rm(list=ls())
+list=ls()
+```
+
+```{r, echo=FALSE}
+library(dplyr)
+library(readxl)
+library(writexl)
+library(caret)
+```
+
+DATA IMPORTATION:
+```{r}
+Data_Directory <- "~/Desktop/OSA Case/Features Selection/"
+
+setwd(Data_Directory)
+
+Input_file <- "OSA_DB_UPM2.xlsx"
+
+df_OSA <- read_excel(paste(Data_Directory, Input_file, sep = ""))
+
+df_OSA = as.data.frame(df_OSA)
+```
+
+
+```{r}
+attach(df_OSA)
+t.test(IAH, Cervical)
+```
+
