@@ -1,0 +1,241 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+rm(list=ls())
+list=ls()
+```
+
+```{r, echo=FALSE}
+library(dplyr)
+library(readxl)
+library(caret)
+library(class)
+library(pROC)
+```
+
+DATA IMPORTATION:
+```{r}
+Data_Directory <- "~/Desktop/OSA Case/Classifier Notebook/"
+
+setwd(Data_Directory)
+
+train_file <- "train.xlsx"
+test_file <- "test.xlsx"
+
+train <- read_excel(paste(Data_Directory, train_file, sep = ""))
+test <- read_excel(paste(Data_Directory, test_file, sep = ""))
+
+test$OSA=factor(test$OSA)
+```
+
+WITHOUT SCALING:
+```{r}
+# Train control CV k fold=10
+set.seed(123)
+train_control <- trainControl(method='cv', number = 10)
+k_values <- expand.grid(k = 1:20) 
+
+# Training the model for hyperparameter selection using cross validation
+knn <- train(OSA~BMI+Age+Cervical+Gender,
+                   data=train,
+                   method = 'knn',
+                   tuneGrid = k_values,
+                   trControl = train_control)
+knn
+```
+
+
+WITH RANGE SCALE:
+```{r}
+set.seed(123)
+knn1 <- train(OSA~BMI+Age+Cervical+Gender,
+                   data=train,
+                   method = 'knn',
+                   tuneGrid = k_values,
+                   preProcess = c("range"),
+                   trControl = train_control)
+
+knn1
+```
+
+WITH NORMALIZATION:
+```{r}
+set.seed(123)
+knn2 <- train(OSA~BMI+Age+Cervical+Gender,
+                   data=train,
+                   method = 'knn',
+                   tuneGrid = k_values,
+                   preProcess = c("center", "scale"),
+                   trControl = train_control)
+
+knn2
+```
+
+```{r}
+matplot(knn$results$k, cbind(knn$results$Accuracy,knn1$results$Accuracy,knn2$results$Accuracy),type=c("l","l","l"),col=rainbow(3),lty=c(1,1,3),lwd = 3,xlab = "k-value",ylab = "Accuracy")
+legend("bottomright", legend=c("No scale","Minimum-Maximum Scaling","Standard Scaling"), col=rainbow(3),pch=20)
+```
+
+PREDICTION PROCESS:
+```{r}
+pred <- predict(knn,newdata=test)
+pred1 <- predict(knn1,newdata=test)
+pred2 <- predict(knn2,newdata=test)
+
+#distribution des classes prédites
+print(table(pred))
+```
+
+CONFUSION MATRIX:
+```{r}
+mat <- confusionMatrix(data=pred,reference=test$OSA,positive="Healthy")
+
+mat1 <- confusionMatrix(data=pred1,reference=test$OSA,positive="Healthy")
+
+mat2 <- confusionMatrix(data=pred2,reference=test$OSA,positive="Healthy")
+
+print(mat)
+```
+
+```{r}
+draw_confusion_matrix <- function(cm) {
+
+  layout(matrix(c(1,1,2)))
+  par(mar=c(2,2,2,2))
+  plot(c(100, 345), c(300, 450), type = "n", xlab="", ylab="", xaxt='n', yaxt='n')
+  title('CONFUSION MATRIX', cex.main=2)
+
+  # create the matrix 
+  rect(150, 430, 240, 370, col='#3F97D0')
+  text(195, 435, 'Class1', cex=1.2)
+  rect(250, 430, 340, 370, col='#F7AD50')
+  text(295, 435, 'Class2', cex=1.2)
+  text(125, 370, 'Predicted', cex=1.3, srt=90, font=2)
+  text(245, 450, 'Actual', cex=1.3, font=2)
+  rect(150, 305, 240, 365, col='#F7AD50')
+  rect(250, 305, 340, 365, col='#3F97D0')
+  text(140, 400, 'Class1', cex=1.2, srt=90)
+  text(140, 335, 'Class2', cex=1.2, srt=90)
+
+  # add in the cm results 
+  res <- as.numeric(cm$table)
+  text(195, 400, res[1], cex=1.6, font=2, col='white')
+  text(195, 335, res[2], cex=1.6, font=2, col='white')
+  text(295, 400, res[3], cex=1.6, font=2, col='white')
+  text(295, 335, res[4], cex=1.6, font=2, col='white')
+
+  # add in the specifics 
+  plot(c(100, 0), c(100, 0), type = "n", xlab="", ylab="", main = "DETAILS", xaxt='n', yaxt='n')
+  text(10, 85, names(cm$byClass[1]), cex=1.2, font=2)
+  text(10, 70, round(as.numeric(cm$byClass[1]), 3), cex=1.2)
+  text(30, 85, names(cm$byClass[2]), cex=1.2, font=2)
+  text(30, 70, round(as.numeric(cm$byClass[2]), 3), cex=1.2)
+  text(50, 85, names(cm$byClass[5]), cex=1.2, font=2)
+  text(50, 70, round(as.numeric(cm$byClass[5]), 3), cex=1.2)
+  text(70, 85, names(cm$byClass[6]), cex=1.2, font=2)
+  text(70, 70, round(as.numeric(cm$byClass[6]), 3), cex=1.2)
+  text(90, 85, names(cm$byClass[7]), cex=1.2, font=2)
+  text(90, 70, round(as.numeric(cm$byClass[7]), 3), cex=1.2)
+
+  # add in the accuracy information 
+  text(30, 35, names(cm$overall[1]), cex=1.5, font=2)
+  text(30, 20, round(as.numeric(cm$overall[1]), 3), cex=1.4)
+  text(70, 35, names(cm$overall[2]), cex=1.5, font=2)
+  text(70, 20, round(as.numeric(cm$overall[2]), 3), cex=1.4)
+}  
+```
+
+```{r}
+draw_confusion_matrix(mat)
+draw_confusion_matrix(mat1)
+draw_confusion_matrix(mat2)
+```
+
+LIFT CURVE:
+```{r}
+score <- predict(knn,test,type="prob")[,"Severe"]
+print(quantile(score))
+
+liftdata <- data.frame(classe=test$OSA)
+liftdata$score <- score
+
+lift_obj <- lift(classe ~ score, data=liftdata, class="Severe")
+print(lift_obj)
+plot(lift_obj)
+
+score1 <- predict(knn1,test,type="prob")[,"Severe"]
+print(quantile(score1))
+
+liftdata1 <- data.frame(classe=test$OSA)
+liftdata1$score <- score1
+
+lift_obj1 <- lift(classe ~ score, data=liftdata1, class="Severe")
+print(lift_obj1)
+plot(lift_obj1)
+
+score2 <- predict(knn2,test,type="prob")[,"Severe"]
+print(quantile(score2))
+
+liftdata2 <- data.frame(classe=test$OSA)
+liftdata2$score <- score2
+
+lift_obj2 <- lift(classe ~ score, data=liftdata2, class="Severe")
+print(lift_obj2)
+plot(lift_obj2)
+```
+
+ROC CURVE:
+```{r}
+roc <- roc(test$OSA, as.numeric(pred))
+AUC = auc(roc)
+
+roc1 <- roc(test$OSA, as.numeric(pred1))
+AUC1 = auc(roc1)
+
+roc2 <- roc(test$OSA, as.numeric(pred2))
+AUC2 = auc(roc2)
+```
+
+
+```{r}
+matplot(cbind(1-lift_obj$data$Sp, 1-lift_obj1$data$Sp, 1-lift_obj2$data$Sp), 
+        cbind(lift_obj$data$Sn, lift_obj1$data$Sn,lift_obj2$data$Sn), type = "l", 
+        col = c("steelblue2", "steelblue4", "turquoise2"), lwd = 2, xlab = "1 - Specificity",ylab = "Sensitivity", 
+        main = "ROC Curve")
+
+legend("bottomright", col=c("steelblue2", "steelblue4", "turquoise2"), pch=15,
+       legend=c(paste("AUC_No_Scale =", round(AUC,3)),paste("AUC_Min-Max =", round(AUC1,3)), paste("AUC_Standardization =", round(AUC2,3))))
+```
+
+There is a difference with normalization and without. It's more accurate with normalization.
+Moreover, the CV is more accurate than without.
+
+EXPORT OF DATA:
+- import the excel file
+```{r, setup, include=FALSE}
+Data_Directory <- "~/Desktop/OSA Case/Results/"
+
+knitr::opts_knit$set(root.dir = Data_Directory)
+
+file <- "Classification Results.xlsx"
+
+results <- read_excel(paste(Data_Directory, file, sep = ""))
+```
+
+- write into it:
+```{r}
+results$kNN_NoScale = c(mat$overall[1], AUC)
+
+results$kNN_Range = c(mat1$overall[1], AUC1)
+
+results$kNN_Sd = c(mat2$overall[1], AUC2)
+```
+
+- export the data 
+```{r}
+write_xlsx(results, paste(Data_Directory, file, sep = ""))
+```

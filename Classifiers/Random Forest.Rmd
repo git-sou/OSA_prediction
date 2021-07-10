@@ -1,0 +1,249 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+rm(list=ls())
+list=ls()
+```
+
+```{r, echo=FALSE}
+library(dplyr)
+library(readxl)
+library(caret)
+```
+
+DATA IMPORTATION:
+```{r}
+Data_Directory <- "~/Desktop/OSA Case/Classifier Notebook/"
+
+setwd(Data_Directory)
+
+train_file <- "train.xlsx"
+test_file <- "test.xlsx"
+
+train <- read_excel(paste(Data_Directory, train_file, sep = ""))
+test <- read_excel(paste(Data_Directory, test_file, sep = ""))
+
+test$OSA=factor(test$OSA)
+```
+
+ONLY MALE: by embedded feature selection, I studied when I drop out the Gender and with Gender. 
+```{r}
+train1 = train %>% filter(Gender!= "mujer")
+
+test1 = test %>% filter(Gender!= "mujer")
+```
+
+LEARNING PROCESS:
+```{r}
+set.seed(123)
+train_control <- trainControl(method="cv", number=10)
+# ntree couldn't be tune: i did a loop
+accuracyy = data.frame(matrix(NA,ncol = 10, nrow = 3))
+k=1
+
+for (ntree in seq(100,2000,200)) {
+	set.seed(40)
+	model = train(OSA ~ BMI+Age+Cervical+Gender, data = train,
+              method = "rf", trControl = train_control, preProcess = c("center","scale"), ntree =ntree)
+	accuracyy[,k] = model$results$Accuracy
+	k = k+1
+}
+```
+
+
+```{r}
+set.seed(123)
+accuracyy1 = data.frame(matrix(NA,ncol = 10, nrow = 2))
+k=1
+
+for (ntree in seq(100,2000,200)) {
+	set.seed(4)
+	model = train(OSA ~ BMI+Age+Cervical, data = train1,
+              method = "rf", trControl = train_control, preProcess = c("center","scale"), ntree =ntree)
+	accuracyy1[,k] = model$results$Accuracy
+	k = k+1
+}
+```
+
+
+```{r}
+accuracyy = t(accuracyy) #transpose 
+
+matplot(seq(100,2000,200), cbind(accuracyy[,1], accuracyy[,2], accuracyy[,3]), 
+        type = c("l","l","l"), col = c("steelblue", "steelblue2", "steelblue4"), 
+        lty = c(1,1,1),lwd = 3, xlab = "ntrees",ylab = "Accuracy")
+
+legend("bottomright", legend = c("mtry = 2","mtry = 3","mtry = 4"), 
+       col = c("steelblue", "steelblue2", "steelblue4"),pch=20)
+```
+
+
+```{r}
+accuracyy1 = t(accuracyy1) #transpose 
+
+matplot(seq(100,2000,200), cbind(accuracyy1[,1], accuracyy1[,2]), 
+        type = c("l","l","l"), col = c("steelblue", "steelblue4"), 
+        lty = c(1,1),lwd = 3, xlab = "ntrees",ylab = "Accuracy")
+
+legend("bottomright", legend = c("mtry = 2","mtry = 3"), 
+       col = c("steelblue", "steelblue4"),pch=20)
+```
+
+
+
+```{r}
+set.seed(56)
+model = train(OSA ~ BMI+Age+Cervical+Gender, data = train,
+              method = "rf", trControl = train_control, preProcess = c("center","scale"), ntrees = 300)
+model
+```
+
+
+```{r}
+set.seed(56)
+model1 = train(OSA ~ BMI+Age+Cervical, data = train1,
+              method = "rf", trControl = train_control, preProcess = c("center","scale"), ntrees = 100)
+model1
+```
+
+PREDICTION PROCESS:
+
+```{r}
+pred <- predict(model,newdata=test)
+
+pred1 <- predict(model1,newdata=test1)
+
+#distribution des classes prédites
+print(table(pred))
+```
+
+CONFUSION MATRIX:
+```{r}
+mat <- confusionMatrix(data=pred,reference=test$OSA,positive="Healthy")
+print(mat)
+
+mat1 <- confusionMatrix(data=pred1,reference=test1$OSA,positive="Healthy")
+```
+
+```{r}
+draw_confusion_matrix <- function(cm) {
+
+  layout(matrix(c(1,1,2)))
+  par(mar=c(2,2,2,2))
+  plot(c(100, 345), c(300, 450), type = "n", xlab="", ylab="", xaxt='n', yaxt='n')
+  title('CONFUSION MATRIX', cex.main=2)
+
+  # create the matrix 
+  rect(150, 430, 240, 370, col='#3F97D0')
+  text(195, 435, 'Class1', cex=1.2)
+  rect(250, 430, 340, 370, col='#F7AD50')
+  text(295, 435, 'Class2', cex=1.2)
+  text(125, 370, 'Predicted', cex=1.3, srt=90, font=2)
+  text(245, 450, 'Actual', cex=1.3, font=2)
+  rect(150, 305, 240, 365, col='#F7AD50')
+  rect(250, 305, 340, 365, col='#3F97D0')
+  text(140, 400, 'Class1', cex=1.2, srt=90)
+  text(140, 335, 'Class2', cex=1.2, srt=90)
+
+  # add in the cm results 
+  res <- as.numeric(cm$table)
+  text(195, 400, res[1], cex=1.6, font=2, col='white')
+  text(195, 335, res[2], cex=1.6, font=2, col='white')
+  text(295, 400, res[3], cex=1.6, font=2, col='white')
+  text(295, 335, res[4], cex=1.6, font=2, col='white')
+
+  # add in the specifics 
+  plot(c(100, 0), c(100, 0), type = "n", xlab="", ylab="", main = "DETAILS", xaxt='n', yaxt='n')
+  text(10, 85, names(cm$byClass[1]), cex=1.2, font=2)
+  text(10, 70, round(as.numeric(cm$byClass[1]), 3), cex=1.2)
+  text(30, 85, names(cm$byClass[2]), cex=1.2, font=2)
+  text(30, 70, round(as.numeric(cm$byClass[2]), 3), cex=1.2)
+  text(50, 85, names(cm$byClass[5]), cex=1.2, font=2)
+  text(50, 70, round(as.numeric(cm$byClass[5]), 3), cex=1.2)
+  text(70, 85, names(cm$byClass[6]), cex=1.2, font=2)
+  text(70, 70, round(as.numeric(cm$byClass[6]), 3), cex=1.2)
+  text(90, 85, names(cm$byClass[7]), cex=1.2, font=2)
+  text(90, 70, round(as.numeric(cm$byClass[7]), 3), cex=1.2)
+
+  # add in the accuracy information 
+  text(30, 35, names(cm$overall[1]), cex=1.5, font=2)
+  text(30, 20, round(as.numeric(cm$overall[1]), 3), cex=1.4)
+  text(70, 35, names(cm$overall[2]), cex=1.5, font=2)
+  text(70, 20, round(as.numeric(cm$overall[2]), 3), cex=1.4)
+}  
+```
+
+```{r}
+draw_confusion_matrix(mat)
+```
+
+LIFT CURVE:
+```{r}
+score <- predict(model,test,type="prob")[,"Severe"]
+print(quantile(score))
+
+liftdata <- data.frame(classe=test$OSA)
+liftdata$score <- score
+
+lift_obj <- lift(classe ~ score, data=liftdata, class="Severe")
+print(lift_obj)
+plot(lift_obj)
+
+score1 <- predict(model1,test1,type="prob")[,"Severe"]
+print(quantile(score1))
+
+liftdata1 <- data.frame(classe=test1$OSA)
+liftdata1$score <- score1
+
+lift_obj1 <- lift(classe ~ score, data=liftdata1, class="Severe")
+print(lift_obj1)
+plot(lift_obj1)
+```
+
+ROC CURVE:
+```{r}
+roc <- roc(test$OSA, as.numeric(pred))
+AUC = auc(roc)
+
+roc1 <- roc(test1$OSA, as.numeric(pred1))
+AUC1 = auc(roc1)
+```
+
+```{r}
+matplot(cbind(1-lift_obj$data$Sp, 1-lift_obj1$data$Sp), 
+        cbind(lift_obj$data$Sn, lift_obj1$data$Sn), type = c("l","l"), 
+        col = c("steelblue2", "turquoise2"), lwd = 2, xlab = "1 - Specificity",ylab = "Sensitivity", 
+        main = "ROC Curve")
+
+legend("bottomright", col=c("steelblue2", "steelblue4"), pch=15,
+       legend=c(paste("AUC Without RFE =", round(AUC,3)),paste("AUC With RFE =", round(AUC1,3))))
+```
+
+
+EXPORT OF DATA:
+- import the excel file
+```{r, setup, include=FALSE}
+Data_Directory <- "~/Desktop/OSA Case/Results/"
+
+knitr::opts_knit$set(root.dir = Data_Directory)
+
+file <- "Classification Results.xlsx"
+
+results <- read_excel(paste(Data_Directory, file, sep = ""))
+```
+
+- write into it:
+```{r}
+results$RandomForest = c(mat$overall[1], AUC)
+
+results$RandomForest_RFE = c(mat1$overall[1], AUC1)
+```
+
+- export the data 
+```{r}
+write_xlsx(results, paste(Data_Directory, file, sep = ""))
+```
