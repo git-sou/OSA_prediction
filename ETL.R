@@ -86,6 +86,9 @@ df_final$Weight = as.numeric(df_final$Weight)  # need to convert character to nu
 
 df_final=filter(df_final,Weight>=0) ## remove NA
 
+write_xlsx(df_final,
+           paste(Data_Directory, "OSA_DB_UPM.xlsx", sep = ""))
+
 # Feature Engineering
 
 ## Define of BMI
