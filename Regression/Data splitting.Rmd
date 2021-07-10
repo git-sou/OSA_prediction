@@ -22,7 +22,7 @@ Data_Directory <- "~/Desktop/OSA Case/Regression Notebook/"
 
 setwd(Data_Directory)
 
-Input_file <- "OSA_DB_UPM2.xlsx"
+Input_file <- "OSA_DB_UPM_2.xlsx"
 
 df_OSA <- read_excel(paste(Data_Directory, Input_file, sep = ""))
 
