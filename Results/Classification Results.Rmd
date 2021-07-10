@@ -1,0 +1,54 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+rm(list=ls())
+list=ls()
+```
+
+```{r, echo=FALSE}
+library(dplyr)
+library(readxl)
+library(ggplot2)
+```
+
+DATA IMPORTATION:
+```{r}
+Data_Directory <- "~/Desktop/OSA Case/Results/"
+
+setwd(Data_Directory)
+
+file <- "Classification Results.xlsx"
+
+results <- read_excel(paste(Data_Directory, file, sep = ""))
+
+results <- t(results)
+
+colnames(results) <- c("Accuracy", "AUC")
+
+results <- as.data.frame(results)
+```
+
+
+```{r}
+attach(results)
+```
+
+```{r}
+theme_set(theme_bw())  # pre-set the bw theme.
+Model = rownames(results)
+# Scatterplot
+scatterplot <- ggplot(results, aes(x=Accuracy, y=AUC)) + 
+  geom_point(aes(col = Model)) + 
+  xlim(c(0.62, 0.75)) + 
+  ylim(c(0.62, 0.75)) + 
+  labs(subtitle="Model Comparison", 
+       y="ROC_AUC", 
+       x="Accuracy")
+
+plot(scatterplot)
+```
+

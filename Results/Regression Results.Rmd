@@ -1,0 +1,56 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+rm(list=ls())
+list=ls()
+```
+
+```{r, echo=FALSE}
+library(dplyr)
+library(readxl)
+library(ggplot2)
+```
+
+DATA IMPORTATION:
+```{r}
+Data_Directory <- "~/Desktop/OSA Case/Results/"
+
+setwd(Data_Directory)
+
+file <- "Regression Results.xlsx"
+
+results <- read_excel(paste(Data_Directory, file, sep = ""))
+
+results <- t(results)
+
+colnames(results) <- c("RMSE", "R²","MAE")
+
+results <- as.data.frame(results)
+```
+
+
+```{r}
+attach(results)
+```
+
+
+```{r}
+theme_set(theme_bw())  # pre-set the bw theme.
+Model = rownames(results)
+
+# Scatterplot
+scatterplot <- ggplot(results, aes(x=MAE, y=RMSE)) + 
+  geom_point(aes(col=Model)) + 
+  xlim(c(12, 13)) + 
+  ylim(c(15, 17)) + 
+  labs(subtitle="Model Comparison", 
+       y="RMSE", 
+       x="MAE")
+
+plot(scatterplot)
+```
+
