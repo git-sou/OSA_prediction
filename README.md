@@ -16,6 +16,8 @@ The teacher let us the choice between R and Python. As I expected to work on oth
 
 ## Results
 
+### Regression result:
 <img width="462" alt="image" src="https://user-images.githubusercontent.com/83417933/125166354-991e1c80-e19b-11eb-8f19-a797cc4bbcf7.png">
 
+### Classification result:
 <img width="450" alt="image" src="https://user-images.githubusercontent.com/83417933/125166364-a4714800-e19b-11eb-8f41-a9c145b23b63.png">
