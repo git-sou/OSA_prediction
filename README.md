@@ -14,4 +14,4 @@ The dataset was provided by the teacher. It was an excel file with 28 columns, s
 
 The teacher let us the choice between R and Python. As I expected to work on other project in Python, I chose to develop in R on RStudio. So, you can see my different R notebooks. So I learned this new programming language and the several libraries. 
 
-
+## Results
