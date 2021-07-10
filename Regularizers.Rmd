@@ -1,0 +1,138 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+rm(list=ls())
+list=ls()
+```
+
+```{r, echo=FALSE}
+library(dplyr)
+library(readxl)
+library(caret)
+library(scatterplot3d)
+```
+
+DATA IMPORTATION:
+```{r}
+Data_Directory <- "~/Desktop/OSA Case/Regression Notebook/"
+
+setwd(Data_Directory)
+
+train_file <- "train.xlsx"
+test_file <- "test.xlsx"
+
+train <- read_excel(paste(Data_Directory, train_file, sep = ""))
+test <- read_excel(paste(Data_Directory, test_file, sep = ""))
+```
+
+LEARNING PROCESS:
+```{r}
+set.seed(1)
+train_Control <- trainControl(method="cv", number=10)
+fraction <- expand.grid( .fraction = seq(0.05,0.95,0.05)) 
+
+lasso <- train(IAH ~ Age+Cervical+BMI, data = train,
+               method="lasso",trControl=train_Control, 
+               preProcess="range", tuneGrid = fraction)
+
+print(lasso)
+
+print(lasso$finalModel)
+```
+
+```{r}
+set.seed(12)
+lambda <- expand.grid( .lambda = seq(0.05,0.95,0.05)) 
+
+ridge <- train(IAH ~ Age+Cervical+BMI, data =train,
+               method="ridge",trControl=train_Control, 
+               preProcess="range",tuneGrid = lambda)
+
+print(ridge)
+
+print(ridge$finalModel)
+```
+
+
+```{r}
+matplot(lasso$results$fraction, cbind(lasso$results$RMSE,ridge$results$RMSE),type="b",col=c("steelblue1","steelblue3"),lty = 1,lwd = 2,xlab = "lambda/fraction-value",ylab = "RMSE",pch=16)
+legend("topright", legend=c("Lasso","Ridge"), col=c("steelblue1","steelblue3"),pch=15)
+```
+
+
+```{r}
+set.seed(12)
+tune <- expand.grid( .lambda = seq(0.05,1,0.05), .fraction = seq(0.05,1,0.05)) 
+
+elastic <- train(IAH ~ Age+Cervical+BMI, data =train,
+               method="enet",trControl=train_Control, 
+               preProcess="range", tuneGrid = tune)
+
+print(elastic)
+
+print(elastic$finalModel)
+```
+
+
+```{r}
+s=scatterplot3d(elastic$results$fraction,elastic$results$lambda,elastic$results$RMSE
+              ,angle = 35, main="3D Scatter Plot", xlab = "Lambda",
+              ylab = "Fraction", zlab = "RMSE", pch = 16, color="steelblue2")
+```
+
+PREDICTION PROCESS:
+```{r}
+pred_lasso <- predict(lasso, newdata=test)
+
+pred_ridge <- predict(ridge, newdata=test)
+
+pred_elastic <- predict(elastic, newdata=test)
+```
+
+METRICS:
+```{r}
+metrics1 = postResample(pred_lasso, test$IAH)
+
+metrics2 = postResample(pred_ridge, test$IAH)
+
+metrics3 = postResample(pred_elastic, test$IAH)
+
+metrics1
+metrics2
+metrics3
+```
+
+
+```{r}
+plot(abs(test$IAH-pred_ridge),xlab="IAH",type='p',col='blue')
+```
+
+EXPORT OF DATA:
+- import the excel file
+```{r, setup, include=FALSE}
+Data_Directory <- "~/Desktop/OSA Case/Results/"
+
+knitr::opts_knit$set(root.dir = Data_Directory)
+
+file <- "Regression Results.xlsx"
+
+results <- read_excel(paste(Data_Directory, file, sep = ""))
+```
+
+- write into it:
+```{r}
+results$lasso = metrics1
+
+results$ridge = metrics2
+
+results$ElasticNet = metrics3
+```
+
+- export the data 
+```{r}
+write_xlsx(results, paste(Data_Directory, file, sep = ""))
+```

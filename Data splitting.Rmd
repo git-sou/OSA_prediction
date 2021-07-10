@@ -1,0 +1,61 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+rm(list=ls())
+list=ls()
+```
+
+```{r, echo=FALSE}
+library(dplyr)
+library(readxl)
+library(writexl)
+library(caret)
+```
+
+DATA IMPORTATION:
+```{r}
+Data_Directory <- "~/Desktop/OSA Case/Regression Notebook/"
+
+setwd(Data_Directory)
+
+Input_file <- "OSA_DB_UPM2.xlsx"
+
+df_OSA <- read_excel(paste(Data_Directory, Input_file, sep = ""))
+
+df_OSA = as.data.frame(df_OSA)
+```
+
+DATA SELECTION:
+```{r}
+# Study gender separatly
+# But the number of female is too low, so I studied only male 
+df_OSA_male=subset(df_OSA, Gender=="hombre")
+df_OSA_male= subset(df_OSA_male, select = -c(Patient,OSA,Gender))
+```
+
+CREATION OF THE TEST AND TRAIN SET:
+```{r}
+set.seed(7)
+trainIndex <- createDataPartition(df_OSA_male$IAH,p=0.8,list=F)
+
+train <- df_OSA_male[trainIndex,]
+test <- df_OSA_male[-trainIndex,]
+
+#Check the mean
+print(mean(df_OSA_male$IAH))
+print(mean(train$IAH))
+print(mean(test$IAH))
+```
+
+```{r}
+train_file <- "train.xlsx"
+test_file <- "test.xlsx"
+
+write_xlsx(train, paste(Data_Directory, train_file, sep = ""))
+write_xlsx(test, paste(Data_Directory, test_file, sep = ""))
+```
+
