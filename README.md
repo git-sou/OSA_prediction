@@ -8,25 +8,10 @@ According to HealthLine and medically reviewed by the University of Illinois-Chi
 
 ## Data
 
-The dataset was provided by the teacher. It was an excel file with 28 columns, so 28 categories and 873 rows. The features from the dataset are divided into categorical and numerical:
-- Patient: An ID for patient identification.
-- Comentarios: Comments related to patients. It is mostly useless information and hence it was removed.
-- Audio tumbado: It just records whether there is an audio of the patient or not. It was removed.
-- Fotos: Useless information, it was removed.
-- Audio: Useless information, it was removed.
-- Gender: Gender of the patient. It is really useful as seen in the problem description.
-- Fumador: it could be useful at first glance.
-- Roncador: it records whether the patient snores during sleep. Useful as seen in the problem description.
-- Enfermedades: Disease registry of the patients. Useful as seen in the problem description.
-- Sala/Ruido: Information about the room where the patient was filmed. It was removed.
-- Imagen: It was removed.
-- Dialecto: It records the patient’s Spanish accent, it was removed.
-- IAH: It is the target feature. It records the apnoea hypopnoea index (AHI).
-- Peso: It is the patient’s weight. It is really useful as seen in the problem description.
-- Talla: It is the patient’s height. It may be useful at first glance.
-- Edad: It is the patient’s age. It is really useful as seen in the problem description.
-- PerCervical: It is the patient’s collar size. It is really useful as seen in the problem description.
+The dataset was provided by the teacher. It was an excel file with 28 columns, so 28 categories and 873 rows. The features from the dataset are as well as categorical and numerical. The first cleaning is to keep only categories whose we need and could be useful for the following project. Finally, I removed features with a high density of NaNs. The target feature is the IAH feature. It's a numerical data and it processed to a feature engineering to categorize patients whether they have a severe or mild form. So it allowed me to make a regression but also a classification. 
 
-The rest of the dataset features: EPWORTH, IAH Supino, IAH Lateral, ... were removed due to their high density of NaNs. All of them had at least 50% of NaNs as we can see: The first cleaning is to keep only categories whose we need for the following project.
+## Development Environment
+
+The teacher let us the choice between R and Python. As I expected to work on other project in Python, I chose to develop in R on RStudio. So, you can see my different R notebooks. So I learned this new programming language and the several libraries. 
 
 
