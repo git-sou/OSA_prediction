@@ -15,7 +15,7 @@ The target feature is the IAH feature. It's a numerical data and it processed to
 The teacher let us the choice between R and Python. As I expected to work on other project in Python, I chose to develop in R on RStudio. So, you can see my different R notebooks. So I learned this new programming language and the several libraries. 
 
 ## Results
-I runned different models in different notebooks. Each time I used the same train and test set and I tried to tuned the hyperparameters for each model. At the end of each notebook, I saved the results and finally gathered and displayed them.
+I runned different models in different notebooks. Each time I used the same train and test set and I tried to tune the hyperparameters for each model. At the end of each notebook, I saved the results and finally gathered and displayed them.
 ### Regression result:
 For regression models, I used RMSE and MAE. We want to minimize them, so the best model is at the bottom left corner.
 <p align="center">
